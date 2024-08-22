@@ -1,31 +1,38 @@
+# Estágio de desenvolvimento
 FROM node:20-alpine AS development
 
 WORKDIR /src/app
 
-COPY package.json package.json
+COPY package.json yarn.lock ./
 COPY tsconfig.json ./
-COPY yarn.lock yarn.lock
 COPY prisma/schema.prisma ./prisma/
 
 RUN yarn install
 
-# Copia o código fonte
 COPY . .
 
 RUN yarn run build
 
+# Estágio de produção
 FROM node:20-alpine AS production
 
 WORKDIR /usr/src/app
 
+# Copia apenas o que é necessário para o ambiente de produção
 COPY --from=development /src/app/package.json ./
 COPY --from=development /src/app/yarn.lock ./
 COPY --from=development /src/app/tsconfig.json ./
 COPY --from=development /src/app/prisma ./prisma/
 COPY --from=development /src/app/dist ./dist
 
+ENV DATABASE_URL="{{DATABASE_URL}}"
+
+# Instala apenas dependências de produção
 RUN yarn install --production
+
+# Gera o Prisma Client e aplica migrações
 RUN npx prisma generate
+RUN npx prisma migrate deploy
 
 EXPOSE 8000
 
