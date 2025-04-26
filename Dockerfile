@@ -25,8 +25,6 @@ COPY --from=development /src/app/tsconfig.json ./
 COPY --from=development /src/app/prisma ./prisma/
 COPY --from=development /src/app/dist ./dist
 
-ENV DATABASE_URL="{{DATABASE_URL}}"
-
 # Instala apenas dependências de produção
 RUN yarn install --production
 
